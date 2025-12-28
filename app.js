@@ -103,7 +103,6 @@ function allAnswered(ticket){
 }
 
 function evaluateTicket(ticket){
-  // считаем верные ответы по 3 вопросам
   let correct = 0;
   for(let i=0;i<ticket.qs.length;i++){
     const q = ticket.qs[i];
@@ -199,13 +198,13 @@ function renderQuiz(){
       </div>`;
     }
 
-    const tagText = isSelected ? "✓ Верное" : "Отметить";
+   
     const tagCls = isSelected ? "tag sel" : "tag";
 
     html += `
       <div class="${cls}" data-i="${i}" role="button" tabindex="0" aria-label="Отметить утверждение">
         <p class="qText">${q.text}</p>
-        <div class="${tagCls}">${tagText}</div>
+        <div class="${tagCls}"></div>
         ${hint}
       </div>
     `;
