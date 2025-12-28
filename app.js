@@ -128,10 +128,12 @@ function evaluateTicket(ticket){
 
 function renderIdle(){
   screen.innerHTML = `
-    <div class="actions">
+    <div>
       Задания номер 19 из ОГЭ
+      <div class="actions">
       <button class="primary" id="btnStart">Начать</button>
       <button class="secondary" id="btnReset">Сброс</button>
+      </div>
     </div>
   `;
 
