@@ -98,7 +98,8 @@ function restore(){
 }
 
 function allAnswered(ticket){
-  return ticket.answers.every(a => a === true || a === false);
+  // Нужно отметить ровно 2 верных утверждения в билете
+  return ticket.answers.filter(a => a === true).length === SETTINGS.truePerTicket;
 }
 
 function evaluateTicket(ticket){
@@ -107,7 +108,8 @@ function evaluateTicket(ticket){
   for(let i=0;i<ticket.qs.length;i++){
     const q = ticket.qs[i];
     const a = ticket.answers[i];
-    const isCorrect = (a === q.isTrue);
+    const userAns = (a === true);
+      const isCorrect = (userAns === q.isTrue);
     if(isCorrect) correct++;
   }
   ticket.score = correct;
@@ -167,13 +169,13 @@ function renderQuiz(){
   const ticket = state.tickets[state.tIndex];
   const ticketNumber = state.tIndex + 1;
 
-  const answeredCount = ticket.answers.filter(a => a !== null).length;
+  const answeredCount = ticket.answers.filter(a => a === true).length;
 
   let html = `
     <div class="ticketTitle">
       <div>
         <b>Билет ${ticketNumber} из ${SETTINGS.ticketsPerSession}</b>
-        <div class="meta">Отвечено: ${answeredCount}/${ticket.qs.length}</div>
+        <div class="meta">Отмечено: ${answeredCount}/${SETTINGS.truePerTicket}</div>
       </div>
       <div class="progress">Верно сейчас: ${state.correctQuestions}/${state.totalQuestions}</div>
     </div>
@@ -183,14 +185,14 @@ function renderQuiz(){
     const a = ticket.answers[i];
     const disabled = ticket.revealed ? 'disabled' : '';
     const activeTrue = a === true ? 'active' : '';
-    const activeFalse = a === false ? 'active' : '';
 
     let cls = "q";
     let hint = "";
     if(ticket.revealed){
-      const isCorrect = (a === q.isTrue);
+      const userAns = (a === true);
+      const isCorrect = (userAns === q.isTrue);
       cls += isCorrect ? " correct" : " wrong";
-      const rightText = q.isTrue ? "Верно" : "Неверно";
+      const rightText = q.isTrue ? "верное" : "неверное";
       hint = `<div class="hint ${isCorrect ? "good":"bad"}">
         ${isCorrect ? "✅ Правильно" : "❌ Неправильно"} • правильный ответ: <b>${rightText}</b>
       </div>`;
@@ -200,8 +202,7 @@ function renderQuiz(){
       <div class="${cls}">
         <p class="qText">${q.text}</p>
         <div class="choices">
-          <button class="choiceBtn ${activeTrue}" data-i="${i}" data-v="true" ${disabled}>Верно</button>
-          <button class="choiceBtn ${activeFalse}" data-i="${i}" data-v="false" ${disabled}>Неверно</button>
+          <button class="markBtn ${activeTrue}" data-i="${i}" ${disabled}>${activeTrue ? "✓ Отмечено как верное" : "Отметить как верное"}</button>
         </div>
         ${hint}
       </div>
@@ -223,20 +224,40 @@ function renderQuiz(){
   if(ticket.revealed){
     html += `<div class="small">Результат билета: <b>${ticket.score}/3</b>.</div>`;
   } else {
-    html += `<div class="small">Подсказка: проверка будет после «Дальше».</div>`;
+    html += `<div class="small">Подсказка: проверка будет после «Дальше».</div>
+    ${ticket.toast ? `<div class="hint bad" style="margin-top:8px;">${ticket.toast}</div>` : ``}`;
   }
 
   screen.innerHTML = html;
 
-  // Обработчики выбора
-  screen.querySelectorAll('.choiceBtn').forEach(btn => {
+  // Обработчики выбора (отмечаем верные утверждения)
+  screen.querySelectorAll('.markBtn').forEach(btn => {
     btn.onclick = () => {
+      if(ticket.revealed) return;
       const i = Number(btn.dataset.i);
-      const v = btn.dataset.v === "true";
-      ticket.answers[i] = v;
+
+      const currentlySelected = ticket.answers.filter(a => a === true).length;
+      const isSelected = ticket.answers[i] === true;
+
+      if(isSelected){
+        ticket.answers[i] = null; // снять отметку
+      } else {
+        // не даём отметить больше двух
+        if(currentlySelected >= SETTINGS.truePerTicket){
+          // мягкая подсказка вместо alert
+          ticket.toast = `Можно отметить только ${SETTINGS.truePerTicket} верных утверждения.`;
+          save(); render();
+          return;
+        }
+        ticket.answers[i] = true;
+      }
+
+      ticket.toast = null;
       save();
       render();
     };
+  });
+
   });
 
   document.getElementById('btnReset').onclick = reset;
