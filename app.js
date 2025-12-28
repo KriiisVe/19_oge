@@ -195,7 +195,7 @@ function renderQuiz(){
       cls += isCorrect ? " correct" : " wrong";
       const rightText = q.isTrue ? "верное" : "неверное";
       hint = `<div class="hint ${isCorrect ? "good":"bad"}">
-        ${isCorrect ? "✅ Правильно" : "❌ Неправильно"} • правильный ответ: <b>${rightText}</b>
+        
       </div>`;
     }
 
