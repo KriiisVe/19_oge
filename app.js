@@ -1,263 +1,325 @@
 const screen = document.getElementById('screen');
 
 const SETTINGS = {
-  ticketsPerSession: 12,     // сколько билетов в одной тренировке
-  questionsPerTicket: 3      // фиксировано 3 по условию
+  ticketsPerSession: 30,
+  questionsPerTicket: 3,
+  // Формат билета: 2 верных + 1 неверный (при нехватке вопросов используем повторения).
+  truePerTicket: 2,
+  falsePerTicket: 1
 };
 
+const STORAGE_KEY = "oge19_pwa_state_v2";
+
 let state = {
-  phase: 'idle',             // idle | quiz | result
-  tickets: [],               // [ [q,q,q], ... ]
+  phase: 'idle',     // idle | quiz | result
+  tickets: [],       // [{qs:[q,q,q], answers:[true/false/null,...], revealed:false}, ...]
   tIndex: 0,
-  qIndex: 0,
-  correct: 0,                // количество верных ответов (по вопросам)
-  total: 0,                  // всего вопросов
-  answered: false,
-  lastWasCorrect: null
+  correctQuestions: 0,
+  totalQuestions: SETTINGS.ticketsPerSession * SETTINGS.questionsPerTicket
 };
 
 function shuffle(arr){
   const a = arr.slice();
-  for (let i=a.length-1; i>0; i--){
+  for(let i=a.length-1;i>0;i--){
     const j = Math.floor(Math.random()*(i+1));
-    [a[i],a[j]] = [a[j],a[i]];
+    [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
 }
 
+function sampleWithReplacement(arr){
+  return arr[Math.floor(Math.random()*arr.length)];
+}
+
 async function loadQuestions(){
-  const res = await fetch('./questions.json', { cache: 'no-store' });
+  const res = await fetch('./questions.json', { cache:'no-store' });
   return await res.json();
 }
 
-function buildTickets(all){
-  // 2 верных + 1 неверный в каждом билете
-  const trues = shuffle(all.filter(q => q.isTrue === true));
-  const falses = shuffle(all.filter(q => q.isTrue === false));
-
-  const maxTickets = Math.min(Math.floor(trues.length / 2), falses.length);
-  const count = Math.min(SETTINGS.ticketsPerSession, maxTickets);
+function buildSession(questions){
+  const trues = questions.filter(q => q.isTrue === true);
+  const falses = questions.filter(q => q.isTrue === false);
 
   const tickets = [];
-  for (let i=0; i<count; i++){
-    const q1 = trues.pop();
-    const q2 = trues.pop();
-    const q3 = falses.pop();
-    tickets.push(shuffle([q1,q2,q3]));
+  for(let t=0; t<SETTINGS.ticketsPerSession; t++){
+    const picked = new Map(); // id -> q, чтобы не было дублей в билете
+
+    // набираем 2 верных
+    while([...picked.values()].filter(q=>q.isTrue).length < SETTINGS.truePerTicket){
+      const q = sampleWithReplacement(trues);
+      if(!picked.has(q.id)) picked.set(q.id, q);
+    }
+    // набираем 1 неверный
+    while([...picked.values()].filter(q=>!q.isTrue).length < SETTINGS.falsePerTicket){
+      const q = sampleWithReplacement(falses);
+      if(!picked.has(q.id)) picked.set(q.id, q);
+    }
+
+    const qs = shuffle([...picked.values()]);
+    tickets.push({
+      qs,
+      answers: Array(qs.length).fill(null), // true/false
+      revealed: false,
+      score: null // сколько верно в этом билете
+    });
   }
   return tickets;
 }
 
-function progressPercent(){
-  const done = state.tIndex * SETTINGS.questionsPerTicket + state.qIndex;
-  return Math.round((done / state.total) * 100);
-}
-
-function render(){
-  if (state.phase === 'idle') return renderStart();
-  if (state.phase === 'quiz') return renderQuestion();
-  if (state.phase === 'result') return renderResult();
-}
-
-function renderStart(){
-  screen.innerHTML = `
-    <div class="meta">
-      <div>Сессия: <b>${SETTINGS.ticketsPerSession}</b> билетов</div>
-      <div>По <b>3</b> утверждения: <b>2 верных</b> + <b>1 неверное</b></div>
-    </div>
-    <div class="spacer"></div>
-    <div class="q">Отвечай на каждое утверждение: <b>верно</b> или <b>неверно</b>. После ответа увидишь подсказку и кнопку «Дальше».</div>
-    <div class="spacer"></div>
-    <div class="row">
-      <button class="primary" id="btnStart">Начать</button>
-      <button class="ghost" id="btnReset">Сброс</button>
-    </div>
-  `;
-
-  document.getElementById('btnStart').onclick = start;
-  document.getElementById('btnReset').onclick = reset;
-}
-
-function renderQuestion(){
-  const ticket = state.tickets[state.tIndex];
-  const q = ticket[state.qIndex];
-
-  const done = state.tIndex * SETTINGS.questionsPerTicket + state.qIndex;
-  const total = state.total;
-
-  const bar = progressPercent();
-  const ticketNum = state.tIndex + 1;
-  const qNum = state.qIndex + 1;
-
-  const disabled = state.answered ? 'disabled' : '';
-
-  let feedbackHtml = '';
-  if (state.answered){
-    const ok = state.lastWasCorrect === true;
-    const cls = ok ? 'ok' : 'no';
-    const msg = ok ? 'Верно!' : 'Не совсем.';
-    const correctText = q.isTrue ? 'верно' : 'неверно';
-    feedbackHtml = `
-      <div class="feedback ${cls}">
-        <strong>${msg}</strong> Правильный ответ: <b>${correctText.toUpperCase()}</b>.
-      </div>
-      <div class="spacer"></div>
-      <div class="row">
-        <button class="primary" id="btnNext">Дальше</button>
-      </div>
-    `;
-  }
-
-  screen.innerHTML = `
-    <div class="meta">
-      <div>Билет <b>${ticketNum}</b> / ${state.tickets.length} • Вопрос <b>${qNum}</b> / 3</div>
-      <div>${done} / ${total}</div>
-    </div>
-    <div class="spacer"></div>
-    <div class="progress"><div class="bar" style="width:${bar}%;"></div></div>
-    <div class="spacer"></div>
-    <div class="q">${escapeHtml(q.text)}</div>
-    <div class="spacer"></div>
-    <div class="row">
-      <button class="good" id="btnTrue" ${disabled}>Верно</button>
-      <button class="bad" id="btnFalse" ${disabled}>Неверно</button>
-      <button class="ghost" id="btnReset">Сброс</button>
-    </div>
-    ${feedbackHtml}
-  `;
-
-  document.getElementById('btnTrue').onclick = () => answer(true);
-  document.getElementById('btnFalse').onclick = () => answer(false);
-  document.getElementById('btnReset').onclick = reset;
-
-  if (state.answered){
-    document.getElementById('btnNext').onclick = next;
-  }
-}
-
-function renderResult(){
-  const total = state.total;
-  const correct = state.correct;
-
-  const pct = total ? Math.round((correct/total)*100) : 0;
-
-  screen.innerHTML = `
-    <div class="meta">
-      <div>Готово ✅</div>
-      <div>Результат</div>
-    </div>
-    <div class="spacer"></div>
-    <div class="q">
-      <div style="font-size:18px; margin-bottom:6px;"><b>${correct}</b> из <b>${total}</b> верно</div>
-      <div class="muted">Точность: <b>${pct}%</b></div>
-    </div>
-    <div class="spacer"></div>
-    <div class="row">
-      <button class="primary" id="btnAgain">Ещё раз (новая выборка)</button>
-      <button class="ghost" id="btnReset">Сброс</button>
-    </div>
-  `;
-
-  document.getElementById('btnAgain').onclick = start;
-  document.getElementById('btnReset').onclick = reset;
-}
-
-function answer(userTrue){
-  if (state.answered) return;
-
-  const q = state.tickets[state.tIndex][state.qIndex];
-  const correct = (userTrue === q.isTrue);
-
-  state.answered = true;
-  state.lastWasCorrect = correct;
-  if (correct) state.correct += 1;
-
-  save();
-  render();
-}
-
-function next(){
-  if (!state.answered) return;
-
-  state.answered = false;
-  state.lastWasCorrect = null;
-
-  // следующий вопрос / билет
-  state.qIndex += 1;
-  if (state.qIndex >= SETTINGS.questionsPerTicket){
-    state.qIndex = 0;
-    state.tIndex += 1;
-  }
-
-  // конец
-  const done = state.tIndex >= state.tickets.length;
-  if (done){
-    state.phase = 'result';
-  }
-
-  save();
-  render();
+function save(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }catch(e){}
 }
 
 function reset(){
-  localStorage.removeItem('pwa-oge-state');
   state = {
-    phase: 'idle',
-    tickets: [],
-    tIndex: 0,
-    qIndex: 0,
-    correct: 0,
-    total: 0,
-    answered: false,
-    lastWasCorrect: null
+    phase:'idle',
+    tickets:[],
+    tIndex:0,
+    correctQuestions:0,
+    totalQuestions: SETTINGS.ticketsPerSession * SETTINGS.questionsPerTicket
   };
+  save();
   render();
-}
-
-function save(){
-  localStorage.setItem('pwa-oge-state', JSON.stringify(state));
 }
 
 function restore(){
   try{
-    const raw = localStorage.getItem('pwa-oge-state');
-    if (!raw) return;
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return;
     const s = JSON.parse(raw);
+    if(!s || typeof s !== 'object') return;
     // минимальная валидация
-    if (!s || typeof s !== 'object') return;
-    if (!Array.isArray(s.tickets)) return;
-    state = s;
-  }catch{}
+    if(Array.isArray(s.tickets) && typeof s.tIndex === 'number'){
+      state = s;
+    }
+  }catch(e){}
 }
 
-function escapeHtml(str){
-  return String(str)
-    .replaceAll('&','&amp;')
-    .replaceAll('<','&lt;')
-    .replaceAll('>','&gt;')
-    .replaceAll('"','&quot;')
-    .replaceAll("'",'&#039;');
+function allAnswered(ticket){
+  return ticket.answers.every(a => a === true || a === false);
 }
 
-async function start(){
-  const all = await loadQuestions();
-  if (!all.every(q => typeof q.isTrue === 'boolean')){
-    alert('В questions.json не у всех вопросов заполнен isTrue.');
-    return;
+function evaluateTicket(ticket){
+  // считаем верные ответы по 3 вопросам
+  let correct = 0;
+  for(let i=0;i<ticket.qs.length;i++){
+    const q = ticket.qs[i];
+    const a = ticket.answers[i];
+    const isCorrect = (a === q.isTrue);
+    if(isCorrect) correct++;
   }
-  const tickets = buildTickets(all);
+  ticket.score = correct;
+  ticket.revealed = true;
 
-  state.phase = 'quiz';
-  state.tickets = tickets;
-  state.tIndex = 0;
-  state.qIndex = 0;
-  state.correct = 0;
-  state.total = tickets.length * SETTINGS.questionsPerTicket;
-  state.answered = false;
-  state.lastWasCorrect = null;
+  // обновим общий счёт: добавляем только при первом раскрытии
+  // (на всякий случай: если раскрыт повторно — не добавляем)
+  return correct;
+}
 
-  save();
-  render();
+function renderIdle(){
+  screen.innerHTML = `
+    <div class="row">
+      <div class="meta"><b>Тренировка</b> • ${SETTINGS.ticketsPerSession} билетов</div>
+      <div class="progress">Блок 1 (ФИПИ)</div>
+    </div>
+
+    <div class="small">
+      В каждом билете 3 утверждения. Для каждого выбери «верно» или «неверно».
+      Проверка происходит, когда нажмёшь <b>«Дальше»</b>.
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="btnStart">Начать</button>
+      <button class="secondary" id="btnReset">Сброс</button>
+    </div>
+
+    <div class="small">
+      Если уже начинали — можно продолжить: при открытии страницы прогресс сохранится автоматически.
+    </div>
+  `;
+
+  document.getElementById('btnStart').onclick = async () => {
+    const questions = await loadQuestions();
+
+    // если вдруг нет ключей
+    const ok = questions.every(q => typeof q.isTrue === 'boolean');
+    if(!ok){
+      alert('В questions.json должны быть поля isTrue (true/false) для всех вопросов.');
+      return;
+    }
+
+    state.phase = 'quiz';
+    state.tickets = buildSession(questions);
+    state.tIndex = 0;
+    state.correctQuestions = 0;
+    state.totalQuestions = SETTINGS.ticketsPerSession * SETTINGS.questionsPerTicket;
+
+    save();
+    render();
+  };
+
+  document.getElementById('btnReset').onclick = reset;
+};
+
+function renderQuiz(){
+  const ticket = state.tickets[state.tIndex];
+  const ticketNumber = state.tIndex + 1;
+
+  const answeredCount = ticket.answers.filter(a => a !== null).length;
+
+  let html = `
+    <div class="ticketTitle">
+      <div>
+        <b>Билет ${ticketNumber} из ${SETTINGS.ticketsPerSession}</b>
+        <div class="meta">Отвечено: ${answeredCount}/${ticket.qs.length}</div>
+      </div>
+      <div class="progress">Верно сейчас: ${state.correctQuestions}/${state.totalQuestions}</div>
+    </div>
+  `;
+
+  ticket.qs.forEach((q, i) => {
+    const a = ticket.answers[i];
+    const disabled = ticket.revealed ? 'disabled' : '';
+    const activeTrue = a === true ? 'active' : '';
+    const activeFalse = a === false ? 'active' : '';
+
+    let cls = "q";
+    let hint = "";
+    if(ticket.revealed){
+      const isCorrect = (a === q.isTrue);
+      cls += isCorrect ? " correct" : " wrong";
+      const rightText = q.isTrue ? "Верно" : "Неверно";
+      hint = `<div class="hint ${isCorrect ? "good":"bad"}">
+        ${isCorrect ? "✅ Правильно" : "❌ Неправильно"} • правильный ответ: <b>${rightText}</b>
+      </div>`;
+    }
+
+    html += `
+      <div class="${cls}">
+        <p class="qText">${q.text}</p>
+        <div class="choices">
+          <button class="choiceBtn ${activeTrue}" data-i="${i}" data-v="true" ${disabled}>Верно</button>
+          <button class="choiceBtn ${activeFalse}" data-i="${i}" data-v="false" ${disabled}>Неверно</button>
+        </div>
+        ${hint}
+      </div>
+    `;
+  });
+
+  const canNext = ticket.revealed ? true : allAnswered(ticket);
+  const btnLabel = ticket.revealed
+    ? (ticketNumber === SETTINGS.ticketsPerSession ? "К результатам" : "Следующий билет")
+    : "Дальше";
+
+  html += `
+    <div class="actions">
+      <button class="primary" id="btnNext" ${canNext ? "" : "disabled"}>${btnLabel}</button>
+      <button class="secondary" id="btnReset">Сброс</button>
+    </div>
+  `;
+
+  if(ticket.revealed){
+    html += `<div class="small">Результат билета: <b>${ticket.score}/3</b>.</div>`;
+  } else {
+    html += `<div class="small">Подсказка: проверка будет после «Дальше».</div>`;
+  }
+
+  screen.innerHTML = html;
+
+  // Обработчики выбора
+  screen.querySelectorAll('.choiceBtn').forEach(btn => {
+    btn.onclick = () => {
+      const i = Number(btn.dataset.i);
+      const v = btn.dataset.v === "true";
+      ticket.answers[i] = v;
+      save();
+      render();
+    };
+  });
+
+  document.getElementById('btnReset').onclick = reset;
+
+  document.getElementById('btnNext').onclick = () => {
+    if(!ticket.revealed){
+      // раскрываем и считаем, сколько правильных в билете, и добавляем в общий счёт
+      const before = ticket.revealed;
+      const score = evaluateTicket(ticket);
+      if(!before){
+        state.correctQuestions += score;
+      }
+      save();
+      render();
+      return;
+    }
+
+    // если билет уже раскрыт — идём дальше/к результатам
+    if(ticketNumber === SETTINGS.ticketsPerSession){
+      state.phase = 'result';
+      save();
+      render();
+      return;
+    }
+
+    state.tIndex += 1;
+    save();
+    render();
+  };
+}
+
+function renderResult(){
+  const total = state.totalQuestions;
+  const correct = state.correctQuestions;
+  const pct = Math.round((correct / total) * 100);
+
+  // Дополнительно: сколько билетов решены полностью (3/3)
+  const full = state.tickets.filter(t => t.score === 3).length;
+
+  screen.innerHTML = `
+    <div class="row">
+      <div><b>Готово!</b></div>
+      <div class="progress">${correct}/${total} • ${pct}%</div>
+    </div>
+
+    <div class="small">
+      Верных ответов: <b>${correct}</b> из <b>${total}</b>.<br/>
+      Билетов на 3/3: <b>${full}</b> из <b>${SETTINGS.ticketsPerSession}</b>.
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="btnAgain">Пройти ещё раз</button>
+      <button class="secondary" id="btnReset">Сброс</button>
+    </div>
+
+    <div class="small">
+      Каждый раз вопросы в билетах выбираются случайно.
+    </div>
+  `;
+
+  document.getElementById('btnAgain').onclick = async () => {
+    const questions = await loadQuestions();
+    state.phase = 'quiz';
+    state.tickets = buildSession(questions);
+    state.tIndex = 0;
+    state.correctQuestions = 0;
+    state.totalQuestions = SETTINGS.ticketsPerSession * SETTINGS.questionsPerTicket;
+    save();
+    render();
+  };
+
+  document.getElementById('btnReset').onclick = reset;
+}
+
+function render(){
+  if(state.phase === 'quiz' && (!state.tickets || state.tickets.length !== SETTINGS.ticketsPerSession)){
+    // если состояние битое
+    state.phase = 'idle';
+  }
+
+  if(state.phase === 'idle') return renderIdle();
+  if(state.phase === 'quiz') return renderQuiz();
+  return renderResult();
 }
 
 // PWA service worker

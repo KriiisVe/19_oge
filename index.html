@@ -6,132 +6,191 @@
   <title>Билеты • ОГЭ Геометрия №19</title>
 
   <link rel="manifest" href="./manifest.webmanifest">
-  <meta name="theme-color" content="#111827" />
+  <meta name="theme-color" content="#f6f7fb" />
 
   <style>
     :root{
-      --bg:#0b1020;
-      --card:rgba(255,255,255,.06);
-      --card2:rgba(255,255,255,.09);
-      --text:#eef2ff;
-      --muted:rgba(238,242,255,.75);
-      --border:rgba(255,255,255,.12);
-      --accent:#7c3aed;
-      --good:#22c55e;
-      --bad:#ef4444;
-      --shadow: 0 18px 60px rgba(0,0,0,.45);
-      --radius: 18px;
+      --bg:#f6f7fb;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6b7280;
+      --border:#e5e7eb;
+      --accent:#2563eb;
+      --good:#16a34a;
+      --bad:#dc2626;
+      --shadow: 0 10px 30px rgba(17,24,39,.08);
+      --radius:16px;
     }
-    *{box-sizing:border-box}
+    *{ box-sizing:border-box; }
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background: radial-gradient(1200px 800px at 30% -10%, rgba(124,58,237,.35), transparent 60%),
-                  radial-gradient(900px 700px at 90% 0%, rgba(59,130,246,.20), transparent 55%),
-                  var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background:var(--bg);
       color:var(--text);
-      min-height:100dvh;
     }
-    .wrap{max-width: 780px; margin: 0 auto; padding: 18px 14px 34px;}
+    .wrap{
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 18px 14px 28px;
+    }
     header{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px; padding: 14px 6px 8px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 14px;
     }
-    .title{display:flex; flex-direction:column; gap:4px;}
-    h1{font-size:18px; margin:0; letter-spacing:.2px;}
-    .sub{font-size:13px; color:var(--muted); margin:0;}
+    h1{
+      font-size: 18px;
+      margin: 0 0 4px 0;
+      letter-spacing: .2px;
+    }
+    .sub{
+      margin:0;
+      font-size: 13px;
+      color:var(--muted);
+      line-height: 1.35;
+    }
     .pill{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 10px; border-radius: 999px;
-      border:1px solid var(--border); background: rgba(255,255,255,.04);
-      font-size:12px; color: var(--muted);
+      flex:0 0 auto;
+      padding: 8px 10px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.65);
+      border-radius: 999px;
+      font-size: 12px;
+      color: var(--muted);
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
     }
     .card{
-      background: linear-gradient(180deg, var(--card), rgba(255,255,255,.03));
+      background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      padding: 16px;
-      backdrop-filter: blur(10px);
+      padding: 14px;
     }
-    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center;}
-    button{
-      appearance:none;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.05);
-      color: var(--text);
-      padding: 12px 14px;
-      border-radius: 14px;
-      font-size: 15px;
-      cursor: pointer;
-      transition: transform .05s ease, background .2s ease, border-color .2s ease;
-      min-width: 128px;
-    }
-    button:active{transform: translateY(1px);}
-    button.primary{
-      background: linear-gradient(180deg, rgba(124,58,237,.95), rgba(124,58,237,.75));
-      border-color: rgba(124,58,237,.9);
-    }
-    button.good{
-      background: linear-gradient(180deg, rgba(34,197,94,.95), rgba(34,197,94,.70));
-      border-color: rgba(34,197,94,.85);
-    }
-    button.bad{
-      background: linear-gradient(180deg, rgba(239,68,68,.95), rgba(239,68,68,.70));
-      border-color: rgba(239,68,68,.85);
-    }
-    button.ghost{min-width:auto; padding:10px 12px; font-size:14px;}
-    button[disabled]{opacity:.55; cursor:not-allowed;}
-    .spacer{height: 10px;}
-    .q{
-      font-size: 16px; line-height: 1.45;
-      padding: 14px 12px;
-      background: rgba(255,255,255,.04);
-      border: 1px solid var(--border);
-      border-radius: 14px;
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
     }
     .meta{
-      display:flex; justify-content:space-between; align-items:center; gap:8px;
-      color: var(--muted); font-size: 13px;
-    }
-    .progress{
-      height: 10px; border-radius: 999px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid var(--border);
-      overflow:hidden;
-    }
-    .bar{height:100%; width:0%; background: linear-gradient(90deg, rgba(124,58,237,1), rgba(59,130,246,1));}
-    .feedback{
-      margin-top: 12px;
-      padding: 12px 12px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.04);
+      font-size: 13px;
       color: var(--muted);
     }
-    .feedback strong{color: var(--text);}
-    .feedback.ok{border-color: rgba(34,197,94,.5);}
-    .feedback.no{border-color: rgba(239,68,68,.55);}
-    .footerNote{font-size:12px; color: var(--muted); padding: 10px 2px 0;}
-    @media (max-width:480px){
-      h1{font-size:17px}
-      .q{font-size:15px}
-      button{flex:1; min-width: 0;}
+    .progress{
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .ticketTitle{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .ticketTitle b{ font-size: 14px; }
+    .q{
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      margin: 10px 0;
+      background: #fff;
+    }
+    .q.correct{ border-color: rgba(22,163,74,.35); background: rgba(22,163,74,.04); }
+    .q.wrong{ border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.04); }
+    .qText{
+      font-size: 14px;
+      line-height: 1.35;
+      margin: 0 0 10px 0;
+    }
+    .choices{
+      display:flex;
+      gap: 10px;
+    }
+    .choiceBtn{
+      flex:1 1 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor:pointer;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .choiceBtn.active{
+      border-color: rgba(37,99,235,.55);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    }
+    .choiceBtn:disabled{ cursor:not-allowed; opacity:.75; }
+    .hint{
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .hint.good{ color: var(--good); }
+    .hint.bad{ color: var(--bad); }
+    .actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    button.primary{
+      padding: 11px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(37,99,235,.25);
+      background: var(--accent);
+      color: #fff;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    button.secondary{
+      padding: 11px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    button.primary:disabled{ opacity:.5; cursor:not-allowed; }
+    .footerNote{
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      text-align:center;
+    }
+    .small{
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+    @media (max-width: 420px){
+      .wrap{ padding: 14px 12px 22px; }
+      .choiceBtn{ padding: 10px 10px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div class="title">
+      <div>
         <h1>Билеты • Геометрия №19</h1>
-        <p class="sub">Формат «как ПДД»: быстро, по 3 утверждения в билете</p>
+        <p class="sub">30 билетов × 3 утверждения. Отмечай: «верно» или «неверно».</p>
       </div>
-      <div class="pill" id="installHint">PWA • офлайн</div>
+      <div class="pill" id="pwaHint">PWA • офлайн</div>
     </header>
 
     <div class="card" id="screen"></div>
-    <div class="footerNote">Совет: на телефоне открой в браузере и «Добавить на главный экран».</div>
+    <div class="footerNote">Подсказка: на телефоне можно «Добавить на главный экран».</div>
   </div>
 
   <script src="./app.js"></script>
