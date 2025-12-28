@@ -1,4 +1,4 @@
-const CACHE = "oge-pwa-v4";
+const CACHE = "oge-pwa-v5";
 const ASSETS = [
   "./",
   "./index.html",

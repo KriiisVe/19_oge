@@ -3,12 +3,13 @@ const screen = document.getElementById('screen');
 const SETTINGS = {
   ticketsPerSession: 30,
   questionsPerTicket: 3,
-  // Формат билета: 2 верных + 1 неверный (при нехватке вопросов используем повторения).
-  truePerTicket: 2,
-  falsePerTicket: 1
+  // В билете может быть 1 или 2 истинных утверждения (остальные — ложные).
+  // При нехватке вопросов используем повторения.
+  minTruePerTicket: 1,
+  maxTruePerTicket: 2
 };
 
-const STORAGE_KEY = "oge19_pwa_state_v2";
+const STORAGE_KEY = "oge19_pwa_state_v3";
 
 let state = {
   phase: 'idle',     // idle | quiz | result
@@ -42,15 +43,19 @@ function buildSession(questions){
 
   const tickets = [];
   for(let t=0; t<SETTINGS.ticketsPerSession; t++){
+    // Сколько истинных в этом билете: 1 или 2 (случайно)
+    const trueNeeded = (Math.random() < 0.5) ? SETTINGS.minTruePerTicket : SETTINGS.maxTruePerTicket;
+    const falseNeeded = SETTINGS.questionsPerTicket - trueNeeded;
+
     const picked = new Map(); // id -> q, чтобы не было дублей в билете
 
-    // набираем 2 верных
-    while([...picked.values()].filter(q=>q.isTrue).length < SETTINGS.truePerTicket){
+    // набираем истинные
+    while([...picked.values()].filter(q=>q.isTrue).length < trueNeeded){
       const q = sampleWithReplacement(trues);
       if(!picked.has(q.id)) picked.set(q.id, q);
     }
-    // набираем 1 неверный
-    while([...picked.values()].filter(q=>!q.isTrue).length < SETTINGS.falsePerTicket){
+    // набираем ложные
+    while([...picked.values()].filter(q=>!q.isTrue).length < falseNeeded){
       const q = sampleWithReplacement(falses);
       if(!picked.has(q.id)) picked.set(q.id, q);
     }
@@ -60,7 +65,8 @@ function buildSession(questions){
       qs,
       answers: Array(qs.length).fill(null), // true/false
       revealed: false,
-      score: null // сколько верно в этом билете
+      score: null, // сколько верно в этом билете
+      trueNeeded
     });
   }
   return tickets;
@@ -98,11 +104,12 @@ function restore(){
 }
 
 function allAnswered(ticket){
-  // Нужно отметить ровно 2 верных утверждения в билете
-  return ticket.answers.filter(a => a === true).length === SETTINGS.truePerTicket;
+  // Нужно отметить ровно столько истинных, сколько в этом билете задумано
+  return ticket.answers.filter(a => a === true).length === ticket.trueNeeded;
 }
 
 function evaluateTicket(ticket){
+  // считаем верные ответы по 3 вопросам
   let correct = 0;
   for(let i=0;i<ticket.qs.length;i++){
     const q = ticket.qs[i];
@@ -121,23 +128,9 @@ function evaluateTicket(ticket){
 
 function renderIdle(){
   screen.innerHTML = `
-    <div class="row">
-      <div class="meta"><b>Тренировка</b> • ${SETTINGS.ticketsPerSession} билетов</div>
-      <div class="progress">Блок 1 (ФИПИ)</div>
-    </div>
-
-    <div class="small">
-      В каждом билете 3 утверждения. Отметь <b>${SETTINGS.truePerTicket} верных</b>.
-      Проверка будет после нажатия <b>«Дальше»</b>.
-    </div>
-
     <div class="actions">
       <button class="primary" id="btnStart">Начать</button>
       <button class="secondary" id="btnReset">Сброс</button>
-    </div>
-
-    <div class="small">
-      Если уже начинали — можно продолжить: при открытии страницы прогресс сохранится автоматически.
     </div>
   `;
 
@@ -170,14 +163,20 @@ function renderQuiz(){
 
   const answeredCount = ticket.answers.filter(a => a === true).length;
 
+  const taskText = (ticket.trueNeeded === 1)
+    ? "Какое из следующих утверждений является истинным высказыванием?"
+    : "Какие из следующих утверждений являются истинными высказываниями?";
+
   let html = `
     <div class="ticketTitle">
       <div>
         <b>Билет ${ticketNumber} из ${SETTINGS.ticketsPerSession}</b>
-        <div class="meta">Отмечено: ${answeredCount}/${SETTINGS.truePerTicket}</div>
+        <div class="meta">Отмечено: ${answeredCount}/${ticket.trueNeeded}</div>
       </div>
       <div class="progress">Верно сейчас: ${state.correctQuestions}/${state.totalQuestions}</div>
     </div>
+
+    <div class="task">${taskText}</div>
   `;
 
   ticket.qs.forEach((q, i) => {
@@ -192,19 +191,12 @@ function renderQuiz(){
       const userAns = (a === true);
       const isCorrect = (userAns === q.isTrue);
       cls += isCorrect ? " correct" : " wrong";
-      const rightText = q.isTrue ? "верное" : "неверное";
-      hint = `<div class="hint ${isCorrect ? "good":"bad"}">
-        
-      </div>`;
+      hint = `<div class="hint ${isCorrect ? "good":"bad"}">${isCorrect ? "✅" : "❌"}</div>`;
     }
-
-   
-    const tagCls = isSelected ? "tag sel" : "tag";
 
     html += `
       <div class="${cls}" data-i="${i}" role="button" tabindex="0" aria-label="Отметить утверждение">
         <p class="qText">${q.text}</p>
-        <div class="${tagCls}"></div>
         ${hint}
       </div>
     `;
@@ -223,10 +215,7 @@ function renderQuiz(){
   `;
 
   if(ticket.revealed){
-    html += `<div class="small">Результат билета: <b>${ticket.score}/3</b>.</div>`;
-  } else {
-    html += `<div class="small">Подсказка: проверка будет после «Дальше».</div>
-    ${ticket.toast ? `<div class="hint bad" style="margin-top:8px;">${ticket.toast}</div>` : ``}`;
+    html += `<div class="resultLine"><b>${ticket.score}/3</b></div>`;
   }
 
   screen.innerHTML = html;
@@ -242,15 +231,11 @@ function renderQuiz(){
       if(selected){
         ticket.answers[i] = null;
       } else {
-        if(currentlySelected >= SETTINGS.truePerTicket){
-          ticket.toast = `Можно отметить только ${SETTINGS.truePerTicket} верных утверждения.`;
-          save(); render();
+        if(currentlySelected >= ticket.trueNeeded){
           return;
         }
         ticket.answers[i] = true;
       }
-
-      ticket.toast = null;
       save();
       render();
     };
