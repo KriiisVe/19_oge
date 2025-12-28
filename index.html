@@ -99,7 +99,29 @@
       padding: 12px;
       margin: 10px 0;
       background: #fff;
+      cursor: pointer;
+      position: relative;
+      transition: box-shadow .15s ease, border-color .15s ease, transform .05s ease;
     }
+    .q:active{ transform: translateY(0.5px); }
+    .q.selected{
+      border-color: rgba(37,99,235,.55);
+      box-shadow: 0 0 0 3px rgba(37,99,235,.10);
+      background: rgba(37,99,235,.03);
+    }
+    .q.disabled{ cursor: default; }
+    .tag{
+      position:absolute;
+      top:10px;
+      right:10px;
+      font-size: 12px;
+      padding: 5px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.85);
+      color: var(--muted);
+    }
+    .tag.sel{ border-color: rgba(37,99,235,.35); color: var(--accent); }
     .q.correct{ border-color: rgba(22,163,74,.35); background: rgba(22,163,74,.04); }
     .q.wrong{ border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.04); }
     .qText{
@@ -107,26 +129,7 @@
       line-height: 1.35;
       margin: 0 0 10px 0;
     }
-    .choices{
-      display:flex;
-      gap: 10px;
-    }
-    .markBtn{
-      flex:1 1 0;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: #fff;
-      cursor:pointer;
-      font-weight: 600;
-      font-size: 13px;
-      color: var(--text);
-    }
-    .markBtn.active{
-      border-color: rgba(37,99,235,.55);
-      box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-    }
-    .markBtn:disabled{ cursor:not-allowed; opacity:.75; }
+    /* Старая разметка с кнопками больше не используется, но оставим без вреда */
     .hint{
       margin-top: 8px;
       font-size: 12px;
@@ -184,7 +187,7 @@
     <header>
       <div>
         <h1>Билеты • Геометрия №19</h1>
-        <p class="sub">30 билетов × 3 утверждения. Отмечай: «верно» или «неверно».</p>
+        <p class="sub">30 билетов × 3 утверждения. В каждом билете отметь <b>2 верных</b>.</p>
       </div>
       <div class="pill" id="pwaHint">PWA • офлайн</div>
     </header>

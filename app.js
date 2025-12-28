@@ -128,8 +128,8 @@ function renderIdle(){
     </div>
 
     <div class="small">
-      В каждом билете 3 утверждения. Для каждого выбери «верно» или «неверно».
-      Проверка происходит, когда нажмёшь <b>«Дальше»</b>.
+      В каждом билете 3 утверждения. Отметь <b>${SETTINGS.truePerTicket} верных</b>.
+      Проверка будет после нажатия <b>«Дальше»</b>.
     </div>
 
     <div class="actions">
@@ -183,10 +183,11 @@ function renderQuiz(){
 
   ticket.qs.forEach((q, i) => {
     const a = ticket.answers[i];
-    const disabled = ticket.revealed ? 'disabled' : '';
-    const activeTrue = a === true ? 'active' : '';
+    const isSelected = a === true;
 
     let cls = "q";
+    if(isSelected) cls += " selected";
+    if(ticket.revealed) cls += " disabled";
     let hint = "";
     if(ticket.revealed){
       const userAns = (a === true);
@@ -198,12 +199,13 @@ function renderQuiz(){
       </div>`;
     }
 
+    const tagText = isSelected ? "✓ Верное" : "Отметить";
+    const tagCls = isSelected ? "tag sel" : "tag";
+
     html += `
-      <div class="${cls}">
+      <div class="${cls}" data-i="${i}" role="button" tabindex="0" aria-label="Отметить утверждение">
         <p class="qText">${q.text}</p>
-        <div class="choices">
-          <button class="markBtn ${activeTrue}" data-i="${i}" ${disabled}>${activeTrue ? "✓ Отмечено как верное" : "Отметить как верное"}</button>
-        </div>
+        <div class="${tagCls}">${tagText}</div>
         ${hint}
       </div>
     `;
@@ -230,21 +232,18 @@ function renderQuiz(){
 
   screen.innerHTML = html;
 
-  // Обработчики выбора (отмечаем верные утверждения)
-  screen.querySelectorAll('.markBtn').forEach(btn => {
-    btn.onclick = () => {
+  // Клик по карточке: отметить/снять отметку
+  screen.querySelectorAll('.q[data-i]').forEach(card => {
+    card.onclick = () => {
       if(ticket.revealed) return;
-      const i = Number(btn.dataset.i);
-
+      const i = Number(card.dataset.i);
       const currentlySelected = ticket.answers.filter(a => a === true).length;
-      const isSelected = ticket.answers[i] === true;
+      const selected = ticket.answers[i] === true;
 
-      if(isSelected){
-        ticket.answers[i] = null; // снять отметку
+      if(selected){
+        ticket.answers[i] = null;
       } else {
-        // не даём отметить больше двух
         if(currentlySelected >= SETTINGS.truePerTicket){
-          // мягкая подсказка вместо alert
           ticket.toast = `Можно отметить только ${SETTINGS.truePerTicket} верных утверждения.`;
           save(); render();
           return;
@@ -256,8 +255,6 @@ function renderQuiz(){
       save();
       render();
     };
-  });
-
   });
 
   document.getElementById('btnReset').onclick = reset;
