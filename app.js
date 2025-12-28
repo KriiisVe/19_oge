@@ -174,7 +174,7 @@ function renderQuiz(){
     <div class="ticketTitle">
       <div>
         <b>Билет ${ticketNumber} из ${SETTINGS.ticketsPerSession}</b>
-        <div class="meta">Отмечено: ${answeredCount}/${ticket.trueNeeded}</div>
+       
       </div>
       <div class="progress">Верно сейчас: ${state.correctQuestions}/${state.totalQuestions}</div>
     </div>
