@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>ОГЭ Геометрия №19</title>
+  <title>Билеты • ОГЭ Геометрия №19</title>
 
   <link rel="manifest" href="./manifest.webmanifest">
   <meta name="theme-color" content="#f6f7fb" />
@@ -113,7 +113,6 @@
       margin: 6px 0 14px;
       color: var(--text);
       line-height: 1.35;
-      font-weight: bold;
     }
     .resultLine{
       margin-top: 10px;
@@ -151,22 +150,34 @@
       color: var(--accent);
       font-weight: 800;
     }
-    .q.selected::before {
-  content: none;
-}
-.revealed .selected.correct {
-  background: #f0fdf4;
-  border-color: #86efac;
-}
-
-.revealed .selected.wrong {
-  background: #fef2f2;
-  border-color: #fecaca;
-}
-
     .q.disabled{ cursor: default; }
-    /* .q.correct{ border-color: rgba(22,163,74,.35); background: rgba(22,163,74,.04); }
-    .q.wrong{ border-color: rgba(220,38,38,.35); background: rgba(220,38,38,.04); } */
+
+    /* После проверки:
+       - прячем «галочку выбора»
+       - цвет карточки = истина утверждения (true/false)
+       - показываем подпись «Истинно/Ложно»
+    */
+    .revealed .q.selected::before{ content: none; }
+    .revealed .q.correct{ border-color: rgba(22,163,74,.38); background: rgba(22,163,74,.06); }
+    .revealed .q.wrong{ border-color: rgba(220,38,38,.38); background: rgba(220,38,38,.06); }
+
+    .resultLabel{
+      display:none;
+      margin-top: 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .revealed .resultLabel{ display:block; }
+    .q.correct .resultLabel{ color: #15803d; }
+    .q.wrong .resultLabel{ color: #b91c1c; }
+
+    .resultLabel small{
+      display:block;
+      margin-top: 4px;
+      font-weight: 500;
+      opacity: .85;
+      color: var(--muted);
+    }
     .qText{
       font-size: 16px;
       line-height: 1.45;
@@ -189,33 +200,25 @@
       flex-wrap: wrap;
       margin-top: 16px;
     }
-    
-     button.primary {
-    text-align: center;
-    transition: 0.5s;
-    background-size: 200% auto;
-    color: white;
-    box-shadow: 0 0 20px #eee;
-    border-radius: 10px;
-    background-image: linear-gradient(to right, #003CC5 0%, #0B63F6 51%, #003CC5 100%);
-}
-.q .result-label {
-  margin-top: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  opacity: 0.9;
-}
+    /* Кнопки: современный «tap» и лёгкая анимация */
+    button.primary, button.secondary{
+      transition: transform .12s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease;
+      will-change: transform;
+    }
+    button.primary:active, button.secondary:active{ transform: translateY(1px) scale(.99); }
 
-.q.correct .result-label {
-  color: #15803d;
-}
-
-.q.wrong .result-label {
-  color: #b91c1c;
-}
- button.primary:hover {
-     background-position: right center;
-}
+    button.primary{
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid rgba(37,99,235,.25);
+      background: var(--accent);
+      color: #fff;
+      cursor:pointer;
+      font-weight: 700;
+      font-size: 14px;
+      box-shadow: 0 10px 24px rgba(37,99,235,.22);
+    }
+    button.primary:hover{ box-shadow: 0 12px 28px rgba(37,99,235,.28); }
     button.secondary{
       padding: 12px 16px;
       border-radius: 14px;
@@ -225,8 +228,22 @@
       cursor:pointer;
       font-weight: 700;
       font-size: 14px;
+      box-shadow: 0 10px 22px rgba(15,23,42,.06);
     }
+    button.secondary:hover{ box-shadow: 0 12px 26px rgba(15,23,42,.08); }
     button.primary:disabled{ opacity:.5; cursor:not-allowed; }
+
+    /* Небольшая анимация смены билета */
+    #screen.screenOut{
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity .16s ease, transform .16s ease;
+    }
+    #screen{
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity .16s ease, transform .16s ease;
+    }
     .footerNote{
       margin-top: 12px;
       font-size: 12px;
@@ -251,9 +268,9 @@
   <div class="wrap">
     <header>
       <div>
-        <h1>ОГЭ №19</h1>
+        <h1>Билеты • Геометрия №19</h1>
       </div>
-      
+      <div class="pill" id="pwaHint">PWA • офлайн</div>
     </header>
 
     <div class="card" id="screen"></div>
