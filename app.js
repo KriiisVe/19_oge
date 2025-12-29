@@ -128,12 +128,9 @@ function evaluateTicket(ticket){
 
 function renderIdle(){
   screen.innerHTML = `
-    <div>
-      Задания номер 19 из ОГЭ
-      <div class="actions">
+    <div class="actions">
       <button class="primary" id="btnStart">Начать</button>
       <button class="secondary" id="btnReset">Сброс</button>
-      </div>
     </div>
   `;
 
@@ -173,10 +170,13 @@ function renderQuiz(){
   let html = `
     <div class="ticketTitle">
       <div>
-        <b>Билет ${ticketNumber} из ${SETTINGS.ticketsPerSession}</b>
-       
+        <b>Билет ${ticketNumber}/${SETTINGS.ticketsPerSession}</b>
       </div>
-      <div class="progress">Верно сейчас: ${state.correctQuestions}/${state.totalQuestions}</div>
+      <div class="badge">Счёт: ${state.correctQuestions}/${state.totalQuestions}</div>
+    </div>
+
+    <div class="row" style="margin-bottom:8px;">
+      <div class="badge">Выбрано: ${answeredCount}/${ticket.trueNeeded}</div>
     </div>
 
     <div class="task">${taskText}</div>
