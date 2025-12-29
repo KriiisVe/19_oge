@@ -187,18 +187,18 @@ function renderQuiz(){
     let cls = "q";
     if(isSelected) cls += " selected";
     if(ticket.revealed) cls += " disabled";
-    let hint = "";
+  
     if(ticket.revealed){
       const userAns = (a === true);
       const isCorrect = (userAns === q.isTrue);
       cls += isCorrect ? " correct" : " wrong";
-      hint = `<div class="hint ${isCorrect ? "good":"bad"}">${isCorrect ? "✅" : "❌"}</div>`;
+     
     }
 
     html += `
       <div class="${cls}" data-i="${i}" role="button" tabindex="0" aria-label="Отметить утверждение">
         <p class="qText">${q.text}</p>
-        ${hint}
+        
       </div>
     `;
   });
