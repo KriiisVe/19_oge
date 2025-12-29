@@ -138,9 +138,12 @@ function animateScreenSwap(cb) {
 // --- Рендеры ---
 function renderIdle() {
   screen.innerHTML = `
+    <div >
+    <p class="task">Выберите одно или два верных утверждения </p>
     <div class="actions">
       <button class="primary" id="btnStart">Начать</button>
       <button class="secondary" id="btnReset">Сброс</button>
+        </div>
     </div>
   `;
 
