@@ -183,7 +183,7 @@ function renderQuiz() {
    
 
     <div class="task">${taskText}</div>
-
+<div class="hint">${ticket.revealed ? '' : 'Нажми ещё раз, чтобы снять выбор.'}</div>
     <div class="ticketBody ${ticket.revealed ? 'revealed' : ''}" id="ticketBody">
   `;
 
