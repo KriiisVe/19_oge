@@ -2,7 +2,7 @@ const screen = document.getElementById('screen');
 
 // --- Настройки ---
 const SETTINGS = {
-  ticketsPerSession: 30,
+  ticketsPerSession: 40,
   questionsPerTicket: 3,
   minTruePerTicket: 1,
   maxTruePerTicket: 2,
