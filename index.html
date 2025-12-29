@@ -176,16 +176,20 @@
       flex-wrap: wrap;
       margin-top: 16px;
     }
-    button.primary{
-      padding: 12px 16px;
-      border-radius: 14px;
-      border: 1px solid rgba(37,99,235,.25);
-      background: var(--accent);
-      color: #fff;
-      cursor:pointer;
-      font-weight: 700;
-      font-size: 14px;
-    }
+    
+     button.primary {
+    text-align: center;
+    transition: 0.5s;
+    background-size: 200% auto;
+    color: white;
+    box-shadow: 0 0 20px #eee;
+    border-radius: 10px;
+    background-image: linear-gradient(to right, #003CC5 0%, #0B63F6 51%, #003CC5 100%);
+}
+
+ button.primary:hover {
+     background-position: right center;
+}
     button.secondary{
       padding: 12px 16px;
       border-radius: 14px;
