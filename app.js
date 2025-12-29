@@ -175,9 +175,7 @@ function renderQuiz(){
       <div class="badge">Счёт: ${state.correctQuestions}/${state.totalQuestions}</div>
     </div>
 
-    <div class="row" style="margin-bottom:8px;">
-      <div class="badge">Выбрано: ${answeredCount}/${ticket.trueNeeded}</div>
-    </div>
+ 
 
     <div class="task">${taskText}</div>
   `;
