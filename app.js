@@ -264,7 +264,7 @@ function renderQuiz(){
       render();
       return;
     }
-
+container.classList.add("revealed");
     state.tIndex += 1;
     save();
     render();
